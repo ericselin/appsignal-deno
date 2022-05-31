@@ -33,7 +33,7 @@ type AppsignalError = {
   /** Error message */
   message?: string;
   /** Array of backtrace lines, each line should be a string */
-  backtrace?: string;
+  backtrace?: string[];
 };
 
 /**
@@ -49,6 +49,15 @@ export type AppsignalBreadcrumb = {
   /** An object of metadata related to the event */
   metadata?: unknown;
 };
+
+export const getBacktrace = (stack: string | undefined) =>
+  stack?.split("\n").slice(1).map((line) => {
+    const match = line.match(/at ([^(]*) \((.*)\)/);
+    if (!match) return "";
+    const [_, functionName, location] = match;
+    // @-sign does not seem to work great with AppSignal, so just replacing it
+    return `${functionName} @ ${location.replace("@", "_")}`;
+  });
 
 export const createAppsignalClient = (
   apiKey: string,
@@ -74,12 +83,12 @@ export const createAppsignalClient = (
     breadcrumbs?: AppsignalBreadcrumb[];
   }) => {
     const body: AppsignalApiBody = {
-      timestamp: Date.now(),
+      timestamp: Math.floor(Date.now() / 1000),
       namespace,
       error: {
         name: error.name,
         message: error.message,
-        backtrace: error.stack,
+        backtrace: getBacktrace(error.stack),
       },
       revision: initParams.revision,
       environment: initParams.environment,
