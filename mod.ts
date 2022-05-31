@@ -52,7 +52,7 @@ export type AppsignalBreadcrumb = {
 
 export const getBacktrace = (stack: string | undefined) =>
   stack?.split("\n").slice(1).map((line) => {
-    const match = line.match(/at ([^(]*) \((.*)\)/);
+    const match = line.match(/at ([^(]*) \(?([^)]*)\)?/);
     if (!match) return "";
     const [_, functionName, location] = match;
     // @-sign does not seem to work great with AppSignal, so just replacing it
